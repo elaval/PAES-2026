@@ -1,0 +1,80 @@
+# .github/workflows/deploy.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # ensure duckdb knows where to put/get extensions (writable, cacheable)
+      DUCKDB_EXTENSION_DIRECTORY: ${{ github.workspace }}/.duckdb-extensions
+      # allow extension install during SSR if needed
+      DUCKDB_ALLOW_EXTENSIONS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache DuckDB extensions
+        uses: actions/cache@v4
+        with:
+          path: .duckdb-extensions
+          key: duckdb-ext-${{ runner.os }}-1.3.2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Preinstall DuckDB httpfs
+        run: npm run prebuild:site
+
+      - name: Build site (capture log)
+        run: |
+          set -o pipefail
+          npm run build:site 2>&1 | tee build.log
+
+      # Optional: fail if build contained the autoload error string
+      - name: Fail on DuckDB autoload error
+        run: |
+          if grep -q "Extension Autoloading Error" build.log; then
+            echo "Detected DuckDB autoload error; failing build."
+            exit 1
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs/.observable/dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
