@@ -43,13 +43,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Preinstall DuckDB httpfs
-        run: npm run prebuild:site
-
       - name: Build site (capture log)
         run: |
           set -o pipefail
-          npm run build:site 2>&1 | tee build.log
+          npm run docs:build 2>&1 | tee build.log
 
       # Optional: fail if build contained the autoload error string
       - name: Fail on DuckDB autoload error
