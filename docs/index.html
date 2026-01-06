@@ -42,6 +42,7 @@
     Plot.plot({
       title: `Distribución de puntaje PAES 2026 por estudiante`,
       subtitle: `Egresados de Enseñanza Media en 2025 con puntaje válido en PAES 2026`,
+      caption:`Fuente: Datos abiertos DEMRE, https://demre.cl/portales/condiciones-uso-informacion-datos-abiertos`,
       width,
       height: 600,
 
@@ -84,6 +85,8 @@
     Plot.plot({
       title: `Distribución de puntaje PAES 2026 por estudiante`,
       subtitle: `Egresados de Enseñanza Media en 2025 con puntaje válido en PAES 2026`,
+        caption:`Fuente: Datos abiertos DEMRE, https://demre.cl/portales/condiciones-uso-informacion-datos-abiertos`,
+
       width,
       height: 600,
       color: {
@@ -164,7 +167,25 @@
 
     * **${d3.format(",")(resumenTop10GrupoDependencia.find(d => d.GRUPO_DEPENDENCIA == 4)?.estudiantes || 0)}** estudiantes provienen de **${d3.format(",")(resumenTop10GrupoDependencia.find(d => d.GRUPO_DEPENDENCIA == 4)?.establecimientos || 0)}** establecimientos de **servicios locales**.
 
-    Esta diversidad en el origen de los estudiantes destacados refleja que el talento académico se distribuye ampliamente a través de diferentes tipos de establecimientos educacionales.
+    Esta diversidad demuestra que el talento académico no se concentra exclusivamente en el sector privado, sino que está presente de manera significativa en todo el sistema educativo público.
+  </script>
+  <script id="78" type="text/x-typescript">
+    (() => {
+      const stats = {}
+      _.chain([...datosEstudiantesPAES2026])
+      .filter(d => d.PROMEDIO >= 797)
+      .groupBy(d => d.top100)
+      .each((items,key) => stats[key] = items.length)
+    .value()
+
+      return md`
+      ## La mayoría de los estudiantes en el top 10% de puntaje NO estudia en los colegios con los 100 mejores promedios
+      De los más de 18 mil estudiantes en el top 10% de promedio:
+      * **${d3.format(",")(stats["TOP100"])}** pertenecen a establecimientos en el ranking de los 100 mejores promedios por establecimiento
+      * **${d3.format(",")(stats["NO TOP100"])}** pertenecen a establecimientos que no están en el ranking de los 100 mejores promedios por establecimiento
+    `
+
+    })()
   </script>
   <script id="34" type="text/markdown">
     ### Establecimientos que más aportan al 10% superior
@@ -173,6 +194,91 @@
   </script>
   <script id="35" type="text/x-typescript">
     Inputs.table(dataTop10PorEstablecimeinto)
+  </script>
+  <script id="58" type="text/markdown">
+    ## Distribución de estudiantes en el 10% superior de promedio PAES 2026
+  </script>
+  <script id="70" type="text/x-typescript">
+    (() => {
+      const stats = {}
+      _.chain([...dataTop10PorEstablecimeinto])
+        .groupBy(d => d.tipoFinanciamiento).map((items,key) => ({
+          tipoFinanciamiento:key,
+          establecimientos:items.length,
+          estudiantes: _.reduce(items,(memo,d) => memo + d.estudiantes,0)
+        }))
+        .each(d => stats[d.tipoFinanciamiento] = d)
+        .value()
+      return md`
+    * **${d3.format(",")(stats["Financiamiento público"]["estudiantes"])}** estudiantes en **${d3.format(",")(stats["Financiamiento público"]["establecimientos"])}** establecimientos con financiamiento público
+    * **${d3.format(",")(stats["Particular pagado"]["estudiantes"])}** estudiantes en **${d3.format(",")(stats["Particular pagado"]["establecimientos"])}** establecimientos particulares pagados
+
+      `
+    })()
+  </script>
+  <script id="56" type="text/x-typescript">
+    Swatches(d3.scaleOrdinal(dominioColor, escalaColor))
+  </script>
+  <script id="53" type="text/x-typescript">
+    Treemap([...dataTop10PorEstablecimeinto], {
+      path: (d) => `${d.tipoFinanciamiento}/${d.NOM_RBD}` || "NA", // e.g. flare/animate/Easing
+      label: (d) => d?.estudiantes >= 5 ? d.NOM_RBD : "" , // display text
+      group: (d) => d.tipoFinanciamiento, // for color; e.g. animate
+      value: (d) => d?.estudiantes, // area of each rect
+      title: (d, n) => `${d.NOM_RBD}\n${d.estudiantes}estudiantes`, // hover text
+      tile: d3.treemapSquarify, // d3.treemapSquarify // d3.treemapBinary
+      colors: escalaColor, // array of colors
+      zDomain: dominioColor, // array of values for the color scale
+
+      width,
+      height: 500
+    })
+  </script>
+  <script id="59" type="text/html">
+    <small>Cada rectángulo representa un establecimiento educacional y el tamaño representa la cantidad de estudiantes en el 10% superior de promedio PAES 2026</small>
+  </script>
+  <script id="60" type="text/markdown">
+    ## Cómo era en 2017
+    Este año el Instituto Nacional aún estaba entre los 100 mejores “promedios"
+  </script>
+  <script id="75" type="text/x-typescript" hidden="">
+    const dataTop10PorEstablecimiento_Referencia = dataTop10PorEstablecimeinto_2017
+  </script>
+  <script id="72" type="text/x-typescript">
+    (() => {
+      const stats = {}
+      _.chain([...dataTop10PorEstablecimiento_Referencia])
+        .groupBy(d => d.tipoFinanciamiento).map((items,key) => ({
+          tipoFinanciamiento:key,
+          establecimientos:items.length,
+          estudiantes: _.reduce(items,(memo,d) => memo + d.estudiantes,0)
+        }))
+        .each(d => stats[d.tipoFinanciamiento] = d)
+        .value()
+      return md`
+    * **${d3.format(",")(stats["Financiamiento público"]["estudiantes"])}** estudiantes en **${d3.format(",")(stats["Financiamiento público"]["establecimientos"])}** establecimientos con financiamiento público
+    * **${d3.format(",")(stats["Particular pagado"]["estudiantes"])}** estudiantes en **${d3.format(",")(stats["Particular pagado"]["establecimientos"])}** establecimientos particulares pagados
+
+      `
+    })()
+  </script>
+  <script id="74" type="text/x-typescript">
+    Swatches(d3.scaleOrdinal(dominioColor, escalaColor))
+  </script>
+  <script id="65" type="text/x-typescript">
+    Treemap([...dataTop10PorEstablecimiento_Referencia], {
+      path: (d) => `${d.tipoFinanciamiento}/${d.NOM_RBD}` || "NA", // e.g. flare/animate/Easing
+      label: (d) => d?.estudiantes >= 5 ? d.NOM_RBD : "" , // display text
+      group: (d) => d.tipoFinanciamiento, // for color; e.g. animate
+      value: (d) => d?.estudiantes, // area of each rect
+      title: (d, n) => `${d.NOM_RBD}\n${d.estudiantes}estudiantes`, // hover text
+      tile: d3.treemapSquarify, // d3.treemapSquarify // d3.treemapBinary
+      colors: escalaColor, // array of colors
+      zDomain: dominioColor, // array of values for the color scale
+
+      width,
+      height: 500
+    })
   </script>
   <script id="37" type="text/markdown">
     ## Conclusiones
@@ -194,6 +300,12 @@
     - **Para las familias**: Existen oportunidades de educación de calidad en una variedad mucho más amplia de establecimientos de lo que sugieren los rankings mediáticos.
 
     - **Para el debate educativo**: Necesitamos métricas más sofisticadas que consideren el valor agregado y el contexto socioeconómico, no solo los promedios brutos.
+
+    ### Limitaciones del análisis
+
+    - Este análisis se basa en el puntaje obtenido por los estudiantes egresados de los distintos establecimientos, pero no refleja necesariamente el "valor agregado" del establecimiento (cuánto aporta por sobre lo esperado dadas las características de los estudiantes que ingresan).
+
+    - Los datos publicados por el DEMRE a la fecha (enero 2026) no permiten identificar aquellos estudiantes que son catalogados como prioritarios por el MINEDUC (quienes por la situación socioeconómica de sus hogares pueden ver dificultadas sus posibilidades de enfrentar el proceso educativo). Un análisis más completo debería considerar esta variable.
 
     ### Reflexión final
 
@@ -361,6 +473,7 @@
       NOM_RBD,
       NOM_COM_RBD,
       GRUPO_DEPENDENCIA,
+      CASE WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular pagado' ELSE 'Financiamiento público' END as tipoFinanciamiento,
       CLEC_REG_ACTUAL,
       MATE1_REG_ACTUAL,
       (CLEC_REG_ACTUAL+MATE1_REG_ACTUAL) / 2 as PROMEDIO
@@ -375,8 +488,13 @@
     SELECT RBD,
       NOM_RBD,
       NOM_COM_RBD,
-      GRUPO_DEPENDENCIA,
-      AVG(PROMEDIO) as PROMEDIO,
+      CASE
+        WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular Pagado'
+        WHEN GRUPO_DEPENDENCIA = 2 THEN 'Particular Subvencionado'
+        WHEN GRUPO_DEPENDENCIA = 3 THEN 'Municipal'
+        WHEN GRUPO_DEPENDENCIA = 4 THEN 'Servicio Local'
+        ELSE 'Otro'
+      END as dependencia,  AVG(PROMEDIO) as PROMEDIO,
       COUNT(*) as estudiantes
     FROM tabla
     GROUP BY RBD,
@@ -407,8 +525,13 @@
     SELECT RBD,
       NOM_RBD,
       NOM_COM_RBD,
-      GRUPO_DEPENDENCIA,
-      AVG(PROMEDIO) as PROMEDIO,
+      CASE
+        WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular Pagado'
+        WHEN GRUPO_DEPENDENCIA = 2 THEN 'Particular Subvencionado'
+        WHEN GRUPO_DEPENDENCIA = 3 THEN 'Municipal'
+        WHEN GRUPO_DEPENDENCIA = 4 THEN 'Servicio Local'
+        ELSE 'Otro'
+      END as dependencia,  AVG(PROMEDIO) as PROMEDIO,
       COUNT(*) as estudiantes
     FROM tabla
     GROUP BY RBD,
@@ -465,9 +588,182 @@
 
 
   </script>
+  <script id="64" type="application/sql" hidden="" database="duckdb" output="dataTop10PorEstablecimeinto_2015">
+    /* Calcular deciles del promedio PAES */
+    WITH tabla as (SELECT
+      paes.RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      CASE WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular pagado' ELSE 'Financiamiento público' END as tipoFinanciamiento,
+      LENG_ACTUAL,
+      MATE_ACTUAL,
+      (LENG_ACTUAL+MATE_ACTUAL) / 2 as PROMEDIO
+
+      FROM "data/Rinden_Admisión2015/ArchivoC_Adm2015.csv" paes
+      LEFT JOIN "data/Directorio-Oficial-EE-2025/20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv" dir
+        ON paes.RBD = dir.RBD
+      WHERE SITUACION_EGRESO = 1 AND LENG_ACTUAL > 0 AND MATE_ACTUAL > 0
+    )
+
+    SELECT RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      tipoFinanciamiento,
+      CASE
+        WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular Pagado'
+        WHEN GRUPO_DEPENDENCIA = 2 THEN 'Particular Subvencionado'
+        WHEN GRUPO_DEPENDENCIA = 3 THEN 'Municipal'
+        WHEN GRUPO_DEPENDENCIA = 4 THEN 'Servicio Local'
+        ELSE 'Otro'
+      END as dependencia,
+
+      count(*) as estudiantes
+    FROM tabla
+      WHERE PROMEDIO >= 630
+    GROUP BY RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      tipoFinanciamiento,
+      ORDER BY count(*) DESC
+
+
+  </script>
+  <script id="63" type="application/sql" hidden="" database="duckdb" output="deciles2015">
+    /* Calcular deciles del promedio PAES */
+    WITH tabla as (SELECT
+      paes.RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      LENG_ACTUAL,
+      MATE_ACTUAL,
+      (LENG_ACTUAL+MATE_ACTUAL) / 2 as PROMEDIO
+
+      FROM "data/Rinden_Admisión2015/ArchivoC_Adm2015.csv" paes
+      LEFT JOIN "data/Directorio-Oficial-EE-2025/20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv" dir
+        ON paes.RBD = dir.RBD
+      WHERE SITUACION_EGRESO = 1 AND LENG_ACTUAL > 0 AND MATE_ACTUAL > 0
+    )
+
+    SELECT
+      'Decil ' || (ROW_NUMBER() OVER (ORDER BY percentile)) as decil,
+      ROUND(percentile, 1) as valor_minimo
+    FROM (
+      SELECT DISTINCT
+        QUANTILE(PROMEDIO, 0.1) OVER () as p10,
+        QUANTILE(PROMEDIO, 0.2) OVER () as p20,
+        QUANTILE(PROMEDIO, 0.3) OVER () as p30,
+        QUANTILE(PROMEDIO, 0.4) OVER () as p40,
+        QUANTILE(PROMEDIO, 0.5) OVER () as p50,
+        QUANTILE(PROMEDIO, 0.6) OVER () as p60,
+        QUANTILE(PROMEDIO, 0.7) OVER () as p70,
+        QUANTILE(PROMEDIO, 0.8) OVER () as p80,
+        QUANTILE(PROMEDIO, 0.9) OVER () as p90,
+        MAX(PROMEDIO) OVER () as p100
+      FROM tabla
+    )
+    UNPIVOT (
+      percentile FOR decil_name IN (p10, p20, p30, p40, p50, p60, p70, p80, p90, p100)
+    )
+    ORDER BY percentile
+  </script>
+  <script id="67" type="application/sql" hidden="" database="duckdb" output="dataTop10PorEstablecimeinto_2017">
+    /* Calcular deciles del promedio PAES */
+    WITH tabla as (SELECT
+      paes.RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      CASE WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular pagado' ELSE 'Financiamiento público' END as tipoFinanciamiento,
+      LENG_ACTUAL,
+      MATE_ACTUAL,
+      (LENG_ACTUAL+MATE_ACTUAL) / 2 as PROMEDIO
+
+      FROM "data/Rinden_Admisión2017/ArchivoC_Adm2017.csv" paes
+      LEFT JOIN "data/Directorio-Oficial-EE-2025/20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv" dir
+        ON paes.RBD = dir.RBD
+      WHERE SITUACION_EGRESO = 1 AND LENG_ACTUAL > 0 AND MATE_ACTUAL > 0
+    )
+
+    SELECT RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      tipoFinanciamiento,
+      CASE
+        WHEN GRUPO_DEPENDENCIA = 1 THEN 'Particular Pagado'
+        WHEN GRUPO_DEPENDENCIA = 2 THEN 'Particular Subvencionado'
+        WHEN GRUPO_DEPENDENCIA = 3 THEN 'Municipal'
+        WHEN GRUPO_DEPENDENCIA = 4 THEN 'Servicio Local'
+        ELSE 'Otro'
+      END as dependencia,
+
+      count(*) as estudiantes
+    FROM tabla
+      WHERE PROMEDIO >= 629.5
+    GROUP BY RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      tipoFinanciamiento,
+      ORDER BY count(*) DESC
+
+
+  </script>
+  <script id="66" type="application/sql" hidden="" database="duckdb" output="deciles2017">
+    /* Calcular deciles del promedio PAES */
+    WITH tabla as (SELECT
+      paes.RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      LENG_ACTUAL,
+      MATE_ACTUAL,
+      (LENG_ACTUAL+MATE_ACTUAL) / 2 as PROMEDIO
+
+      FROM "data/Rinden_Admisión2017/ArchivoC_Adm2017.csv" paes
+      LEFT JOIN "data/Directorio-Oficial-EE-2025/20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv" dir
+        ON paes.RBD = dir.RBD
+      WHERE SITUACION_EGRESO = 1 AND LENG_ACTUAL > 0 AND MATE_ACTUAL > 0
+    )
+
+    SELECT
+      'Decil ' || (ROW_NUMBER() OVER (ORDER BY percentile)) as decil,
+      ROUND(percentile, 1) as valor_minimo
+    FROM (
+      SELECT DISTINCT
+        QUANTILE(PROMEDIO, 0.1) OVER () as p10,
+        QUANTILE(PROMEDIO, 0.2) OVER () as p20,
+        QUANTILE(PROMEDIO, 0.3) OVER () as p30,
+        QUANTILE(PROMEDIO, 0.4) OVER () as p40,
+        QUANTILE(PROMEDIO, 0.5) OVER () as p50,
+        QUANTILE(PROMEDIO, 0.6) OVER () as p60,
+        QUANTILE(PROMEDIO, 0.7) OVER () as p70,
+        QUANTILE(PROMEDIO, 0.8) OVER () as p80,
+        QUANTILE(PROMEDIO, 0.9) OVER () as p90,
+        MAX(PROMEDIO) OVER () as p100
+      FROM tabla
+    )
+    UNPIVOT (
+      percentile FOR decil_name IN (p10, p20, p30, p40, p50, p60, p70, p80, p90, p100)
+    )
+    ORDER BY percentile
+  </script>
+  <script id="54" type="text/x-typescript" hidden="">
+    const etiquetaPP = "Particular pagado";
+    const etiquetaNoPP = "Financiamiento público";
+    const dominioColor = [etiquetaNoPP, etiquetaPP];
+    const escalaColor = d3.schemeObservable10;
+  </script>
   <script id="15" type="text/x-typescript" hidden="">
     import {config} from "observable:@elaval/utils"
-
+  </script>
+  <script id="57" type="text/x-typescript">
+    import { Swatches } from "observable:@d3/color-legend"
+  </script>
+  <script id="55" type="text/x-typescript">
+    import {Treemap} from "observable:@d3/treemap-component"
   </script>
   <script id="16" type="text/x-typescript" hidden="">
     config.d3Config.setLocaleD3_ES()
