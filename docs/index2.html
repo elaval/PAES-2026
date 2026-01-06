@@ -1,0 +1,49 @@
+<!doctype html>
+<notebook theme="glacier">
+  <title>PAES v2</title>
+  <script id="1" type="text/markdown">
+    # PAES v2
+  </script>
+  <script id="2" type="application/sql" pinned="" database="duckdb">
+    WITH tabla as (SELECT
+      paes.RBD,
+      NOM_RBD,
+      NOM_COM_RBD,
+      GRUPO_DEPENDENCIA,
+      CLEC_REG_ACTUAL,
+      MATE1_REG_ACTUAL,
+      (CLEC_REG_ACTUAL+MATE1_REG_ACTUAL) / 2 as PROMEDIO
+
+      FROM "data/Rinden_Admisión2026/ArchivoC_Adm2026REG.csv" paes
+      LEFT JOIN "data/Directorio-Oficial-EE-2025/20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv" dir
+        ON paes.RBD = dir.RBD
+      WHERE SITUACION_EGRESO = 1 AND CLEC_REG_ACTUAL > 0 AND MATE1_REG_ACTUAL > 0
+      ORDER BY PROMEDIO DESC
+    ),
+
+      top100 as (
+
+        SELECT RBD,
+          NOM_RBD,
+          NOM_COM_RBD,
+          GRUPO_DEPENDENCIA,
+          AVG(PROMEDIO) as PROMEDIO,
+          COUNT(*) as estudiantes
+        FROM tabla
+        GROUP BY RBD,
+          NOM_RBD,
+          NOM_COM_RBD,
+          GRUPO_DEPENDENCIA,
+          ORDER BY PROMEDIO DESC
+
+        LIMIT 100)
+
+    SELECT tabla.*,
+      CASE WHEN top100.RBD IS NULL THEN 'NO TOP100' ELSE 'TOP100' END as top100
+    FROM tabla
+      LEFT JOIN top100
+       ON tabla.RBD = top100.RBD
+    ORDER BY (CLEC_REG_ACTUAL+MATE1_REG_ACTUAL) / 2 DESC
+
+  </script>
+</notebook>

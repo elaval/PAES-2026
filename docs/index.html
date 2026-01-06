@@ -28,7 +28,7 @@
     Exploraremos estos aspectos a través de visualizaciones y análisis de datos.
   </script>
   <script id="4" type="text/markdown">
-    Proceso y Visualización por @elaval
+    ## Promedio de puntaje PAES 2026 por estudiante
   </script>
   <script id="13" type="text/markdown">
     ${d3.format(",")(datosEstudiantesPAES2026.length)} estudiantes egresados el año 2025 de Educación Media rindieron la prueba PAES 2026.
@@ -208,7 +208,7 @@
 
   </script>
   <script id="10" type="application/sql" hidden="" database="duckdb" output="valoresDeciles">
-    -- Calcular deciles del promedio PAES
+    /* Calcular deciles del promedio PAES */
     WITH tabla as (SELECT
       paes.RBD,
       NOM_RBD,
@@ -310,7 +310,7 @@
       GRUPO_DEPENDENCIA,
       count(*) as estudiantes
     FROM tabla
-        WHERE PROMEDIO >= ${p90}
+        WHERE PROMEDIO >= 797
     GROUP BY RBD,
       GRUPO_DEPENDENCIA)
 
@@ -343,7 +343,7 @@
       tipoFinanciamiento,
       count(*) as estudiantes
     FROM tabla
-      WHERE PROMEDIO >= ${p90}
+      WHERE PROMEDIO >= 797
     GROUP BY RBD,
       tipoFinanciamiento)
 
@@ -450,7 +450,7 @@
 
       count(*) as estudiantes
     FROM tabla
-      WHERE PROMEDIO >= ${p90}
+      WHERE PROMEDIO >= 797
     GROUP BY RBD,
       NOM_RBD,
       NOM_COM_RBD,
